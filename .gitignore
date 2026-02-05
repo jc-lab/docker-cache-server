@@ -30,3 +30,15 @@ go.work.sum
 # Editor/IDE
 # .idea/
 # .vscode/
+
+# Application binary
+docker-cache-server
+docker-cache-server-*
+
+# Configuration files (keep example)
+config.yaml
+config.yml
+
+# Data directory
+/var/lib/docker-cache-server/
+data/

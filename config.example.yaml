@@ -1,0 +1,22 @@
+# Docker Cache Server Configuration Example
+
+server:
+  address: "0.0.0.0"
+  port: 5000
+
+storage:
+  directory: "/var/cache/docker-cache-server"
+
+auth:
+  enabled: true
+  users:
+    - username: "admin"
+      password: "admin123"
+    - username: "user1"
+      password: "password1"
+
+cache:
+  # TTL for cached layers (duration format: 24h, 48h, etc.)
+  ttl: "168h"
+  # Cleanup interval (duration format: 1h, 30m, etc.)
+  cleanup_interval: "1h"
