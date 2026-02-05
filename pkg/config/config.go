@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/knadh/koanf/parsers/yaml"
@@ -110,9 +111,9 @@ func Load(configFile string, flags *pflag.FlagSet) (*Config, error) {
 
 	// Load environment variables (prefix: DCS_)
 	// e.g., DCS_SERVER_PORT=8080
-	if err := k.Load(env.Provider("DCS_", ".", func(s string) string {
+	if err := k.Load(env.Provider("DCS_", "_", func(s string) string {
 		// Convert DCS_SERVER_PORT to server.port
-		return s[4:] // Remove DCS_ prefix
+		return strings.ToLower(s[4:]) // Remove DCS_ prefix
 	}), nil); err != nil {
 		return nil, fmt.Errorf("loading environment variables: %w", err)
 	}
