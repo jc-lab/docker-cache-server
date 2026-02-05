@@ -1,0 +1,24 @@
+{{ $persistence := .Values.cacheStorage.persistence }}
+{{- if $persistence.enabled }}
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: {{ include "docker-cache-server.cacheStorage.pvcName" . }}
+  namespace: {{ include "common.names.namespace" . | quote }}
+  labels: {{- include "common.labels.standard" . | nindent 4 }}
+    app.kubernetes.io/component: server
+    {{- if .Values.commonLabels }}
+    {{- include "common.tplvalues.render" ( dict "value" .Values.commonLabels "context" $ ) | nindent 4 }}
+    {{- end }}
+  {{- if .Values.commonAnnotations }}
+  annotations: {{- include "common.tplvalues.render" ( dict "value" .Values.commonAnnotations "context" $ ) | nindent 4 }}
+  {{- end }}
+spec:
+  accessModes:
+  {{- $persistence.accessModes | toYaml | nindent 4 }}
+  resources:
+    requests:
+      storage: {{ $persistence.size | quote }}
+  storageClassName: {{ $persistence.storageClass | quote }}
+  volumeMode: Filesystem
+{{- end }}
