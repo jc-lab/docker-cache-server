@@ -14,6 +14,8 @@ import (
 
 	auth2 "github.com/distribution/distribution/v3/registry/auth"
 	"github.com/distribution/distribution/v3/registry/storage/driver/filesystem"
+	"github.com/docker/go-metrics"
+	"github.com/gorilla/mux"
 	"github.com/jc-lab/docker-cache-server/internal/handlers"
 	"github.com/jc-lab/docker-cache-server/pkg/auth/silly"
 	"github.com/jc-lab/docker-cache-server/pkg/auth/userpass"
@@ -69,6 +71,9 @@ type cacheServer struct {
 	opts       *Options
 	handler    *handlers.App
 	httpServer *http.Server
+
+	debugServer *http.Server
+	debugMux    *mux.Router
 }
 
 const authRelam = "docker-cache-server"
@@ -125,17 +130,41 @@ func New(opts *Options) (CacheServer, error) {
 	}
 	server.appContext, server.appCancel = context.WithCancel(context.Background())
 	server.handler, err = handlers.NewApp(server.appContext, &handlers.Config{
+		HttpPrefix:       opts.Config.Http.Prefix,
+		HttpHost:         opts.Config.Http.Host,
+		HttpRelativeURLs: opts.Config.Http.Relativeurls,
 		AccessController: accessController,
 		Driver:           storageDriver,
 	})
 
 	// Create HTTP server
 	server.httpServer = &http.Server{
-		Addr:         fmt.Sprintf("%s:%d", opts.Config.Server.Address, opts.Config.Server.Port),
+		Addr:         opts.Config.Http.Addr,
 		Handler:      server.handler,
 		ReadTimeout:  300 * time.Second,
 		WriteTimeout: 300 * time.Second,
 		IdleTimeout:  120 * time.Second,
+	}
+
+	if opts.Config.Http.Debug.Addr != "" {
+		debugRouter := mux.NewRouter()
+		server.debugMux = debugRouter.PathPrefix("/debug/").Subrouter()
+		server.debugServer = &http.Server{
+			Addr:         opts.Config.Http.Debug.Addr,
+			Handler:      debugRouter,
+			ReadTimeout:  5 * time.Second,
+			WriteTimeout: 5 * time.Second,
+			IdleTimeout:  120 * time.Second,
+		}
+
+		server.debugMux.Path("/health").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusOK)
+		})
+
+		if prom := opts.Config.Http.Debug.Prometheus; prom.Enabled {
+			logger.Info("providing prometheus metrics on ", prom.Path)
+			server.debugMux.PathPrefix(prom.Path).Handler(metrics.Handler())
+		}
 	}
 
 	return server, nil
@@ -151,6 +180,14 @@ func (s *cacheServer) Start() error {
 
 	// Start server in goroutine
 	errChan := make(chan error, 1)
+	if s.debugServer != nil {
+		s.logger.Infof("starting debug server (%s)", s.debugServer.Addr)
+		go func() {
+			if err := s.debugServer.ListenAndServe(); err != nil {
+				s.logger.Errorf("error starting debug server: %v", err)
+			}
+		}()
+	}
 	go func() {
 		errChan <- s.httpServer.ListenAndServe()
 	}()

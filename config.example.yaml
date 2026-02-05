@@ -1,8 +1,7 @@
 # Docker Cache Server Configuration Example
 
-server:
-  address: "0.0.0.0"
-  port: 5000
+http:
+  addr: "0.0.0.0:5000"
 
 storage:
   directory: "/var/cache/docker-cache-server"

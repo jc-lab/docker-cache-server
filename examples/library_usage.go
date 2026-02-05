@@ -30,16 +30,16 @@ func exampleBasicUsage() {
 
 	// Start server (blocking)
 	if err := server.ListenAndServe(cfg); err != nil {
-		log.Fatalf("Server error: %v", err)
+		log.Fatalf("Http error: %v", err)
 	}
 }
 
 func exampleCustomConfig() {
 	// Create custom configuration
 	cfg := &config.Config{
-		Server: config.ServerConfig{
-			Address: "0.0.0.0",
-			Port:    5000,
+		Http: config.HttpConfig{
+			Addr: "0.0.0.0",
+			Port: 5000,
 		},
 		Storage: config.StorageConfig{
 			Directory: "/custom/cache/dir",
@@ -105,7 +105,7 @@ func exampleCustomAuth() {
 
 func exampleWithContext() {
 	cfg := config.DefaultConfig()
-	cfg.Server.Port = 5001
+	cfg.Http.Port = 5001
 
 	// Create context with timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Hour)

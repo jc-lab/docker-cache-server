@@ -14,8 +14,7 @@ import (
 func main() {
 	// Setup flags
 	flags := pflag.NewFlagSet("docker-cache-server", pflag.ExitOnError)
-	config.BindFlags(flags)
-
+	configFile := flags.String("config", "", "Path to config file")
 	version := flags.Bool("version", false, "Print version and exit")
 
 	if err := flags.Parse(os.Args[1:]); err != nil {
@@ -29,13 +28,8 @@ func main() {
 		os.Exit(0)
 	}
 
-	configFile, err := flags.GetString("config")
-	if err != nil {
-		logrus.Fatal(err)
-	}
-
 	// Load configuration
-	cfg, err := config.Load(configFile, flags)
+	cfg, err := config.Load(*configFile, flags)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error loading configuration: %v\n", err)
 		os.Exit(1)
@@ -58,8 +52,8 @@ func main() {
 		logger.Fatalf("Failed to create server: %v", err)
 	}
 
-	logger.Info("Docker Cache Server starting...")
+	logger.Info("Docker Cache Http starting...")
 	if err := srv.Start(); err != nil {
-		logger.Fatalf("Server error: %v", err)
+		logger.Fatalf("Http error: %v", err)
 	}
 }

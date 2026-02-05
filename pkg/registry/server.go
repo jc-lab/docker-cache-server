@@ -59,7 +59,7 @@ func NewServer(cfg *config.Config, logger *logrus.Logger) (*Server, error) {
 			},
 		},
 		HTTP: configuration.HTTP{
-			Addr:    fmt.Sprintf("%s:%d", cfg.Server.Address, cfg.Server.Port),
+			Addr:    fmt.Sprintf("%s:%d", cfg.Http.Addr, cfg.Http.Port),
 			Headers: http.Header{},
 		},
 		Log: configuration.Log{
@@ -75,7 +75,7 @@ func NewServer(cfg *config.Config, logger *logrus.Logger) (*Server, error) {
 	if cfg.Auth.Enabled {
 		distConfig.Auth = configuration.Auth{
 			"htpasswd": configuration.Parameters{
-				"realm": "Docker Cache Server",
+				"realm": "Docker Cache Http",
 				"path":  fmt.Sprintf("%s/.htpasswd", cfg.Storage.Directory),
 			},
 		}
@@ -116,7 +116,7 @@ func NewServer(cfg *config.Config, logger *logrus.Logger) (*Server, error) {
 
 	// Create HTTP server
 	server.httpServer = &http.Server{
-		Addr:         fmt.Sprintf("%s:%d", cfg.Server.Address, cfg.Server.Port),
+		Addr:         fmt.Sprintf("%s:%d", cfg.Http.Addr, cfg.Http.Port),
 		Handler:      handler,
 		ReadTimeout:  60 * time.Second,
 		WriteTimeout: 60 * time.Second,
@@ -128,7 +128,7 @@ func NewServer(cfg *config.Config, logger *logrus.Logger) (*Server, error) {
 
 // Start starts the server and cleanup routines
 func (s *Server) Start() error {
-	s.logger.Infof("starting Docker cache server on %s:%d", s.config.Server.Address, s.config.Server.Port)
+	s.logger.Infof("starting Docker cache server on %s:%d", s.config.Http.Addr, s.config.Http.Port)
 	s.logger.Infof("storage directory: %s", s.config.Storage.Directory)
 	s.logger.Infof("cache TTL: %v, cleanup interval: %v", s.config.Cache.TTL, s.config.Cache.CleanupInterval)
 
@@ -229,7 +229,7 @@ func (s *Server) validateCredentials(username, password string) bool {
 
 // sendAuthChallenge sends a 401 Unauthorized response with WWW-Authenticate header
 func (s *Server) sendAuthChallenge(w http.ResponseWriter) {
-	w.Header().Set("WWW-Authenticate", `Basic realm="Docker Cache Server"`)
+	w.Header().Set("WWW-Authenticate", `Basic realm="Docker Cache Http"`)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusUnauthorized)
 	w.Write([]byte(`{"errors":[{"code":"UNAUTHORIZED","message":"authentication required"}]}`))
